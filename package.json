@@ -1,0 +1,18 @@
+{
+  "name": "puzzle-data",
+  "version": "1.0.0",
+  "description": "Builds a JSON file from TS puzzles definition",
+  "type": "module",
+  "main": "dist/build.js",
+  "scripts": {
+    "build": "tsc && node dist/build.js",
+    "dev": "nodemon",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "husky": "^9.1.7",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.8.3"
+  }
+}
