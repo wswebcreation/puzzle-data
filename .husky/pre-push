@@ -1,6 +1,0 @@
-npm run build
-git add assets/puzzles.json
-git commit -m "chore: update puzzles.json"
-npm version patch
-git push
-
