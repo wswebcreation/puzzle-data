@@ -1,6 +1,6 @@
 {
   "name": "puzzle-data",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Builds a JSON file from TS puzzles definition",
   "type": "module",
   "main": "dist/build.js",
