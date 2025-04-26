@@ -9,7 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const assetsDir = path.resolve(__dirname, '../assets');
-const outputPath = path.resolve(assetsDir, 'puzzles.json');
+const puzzleOutputPath = path.resolve(assetsDir, 'puzzles.json');
+const versionOutputPath = path.resolve(assetsDir, 'version.json');
 
 function ensureAssetsFolder() {
   if (!fs.existsSync(assetsDir)) {
@@ -19,8 +20,8 @@ function ensureAssetsFolder() {
 }
 
 function getCurrentVersion(): number {
-  if (fs.existsSync(outputPath)) {
-    const existing = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+  if (fs.existsSync(versionOutputPath)) {
+    const existing = JSON.parse(fs.readFileSync(versionOutputPath, 'utf-8'));
     return typeof existing.version === 'number' ? existing.version : 0;
   }
   return 0;
@@ -39,19 +40,19 @@ function resolveColors(puzzles: Puzzle[]) {
 function build() {
   ensureAssetsFolder();
 
-  const resolvedPuzzles = resolveColors(puzzles);
+  const resolvedPuzzlesOutput = resolveColors(puzzles);
+  const puzzleJson = JSON.stringify(resolvedPuzzlesOutput);
+
+  fs.writeFileSync(puzzleOutputPath, puzzleJson, 'utf-8');
+
+  console.log(`✅ Successfully built puzzles.json (${resolvedPuzzlesOutput.length} puzzles)`);
+  
   const currentVersion = getCurrentVersion();
   const newVersion = currentVersion + 1;
-  const output = {
-    version: newVersion,
-    puzzles: resolvedPuzzles,
-  };
+  const versionOutput = {version: newVersion};
+  const versionJson = JSON.stringify(versionOutput);
 
-  const json = JSON.stringify(output);
-
-  fs.writeFileSync(outputPath, json, 'utf-8');
-
-  console.log(`✅ Successfully built puzzles.json (${resolvedPuzzles.length} puzzles)`);
+  fs.writeFileSync(versionOutputPath, versionJson, 'utf-8');
   console.log(`📦 Version updated to: ${newVersion}`);
 }
 
