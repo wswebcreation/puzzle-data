@@ -46,6 +46,22 @@ npm run watch
 
 This will:
 - Automatically rebuild the JSON when you change `src/puzzles.ts` or other source files.
+- Generate `assets/puzzles.json` ready to use.
+
+---
+
+### 4. CLI
+
+During step 3. (Start in watch mode) you can open a CLI and select the puzzle you're working on. Make sure you open and the `dev`-mode and this `cli` in two separate windows
+
+```bash
+npm run cli
+```
+
+This will:
+- Ask which puzzle you're working on
+- Watch the `assets/puzzles.json` file for changes
+- Show an output of the puzzle in de CLI
 
 ---
 
@@ -54,7 +70,8 @@ This will:
 | Command | Description |
 |:--------|:------------|
 | `npm run build` | Compile TypeScript and build puzzles.json |
-| `npm run watch` | Start watch mode to rebuild on file changes |
+| `npm run dev` | Start watch mode to rebuild on file changes |
+| `npm run cli` | Starts a cli where you can, select the puzzle, and see the output in the terminal.<br />Changes to the `puzzles.ts` file will automatically be refreshed in the cli |
 
 ---
 

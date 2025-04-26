@@ -21,9 +21,9 @@ function ensureAssetsFolder() {
 function getCurrentVersion(): number {
   if (fs.existsSync(outputPath)) {
     const existing = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
-    return typeof existing.version === 'number' ? existing.version : 1;
+    return typeof existing.version === 'number' ? existing.version : 0;
   }
-  return 1;
+  return 0;
 }
 
 function resolveColors(puzzles: Puzzle[]) {
@@ -47,7 +47,7 @@ function build() {
     puzzles: resolvedPuzzles,
   };
 
-  const json = JSON.stringify(output, null, 2);
+  const json = JSON.stringify(output);
 
   fs.writeFileSync(outputPath, json, 'utf-8');
 
