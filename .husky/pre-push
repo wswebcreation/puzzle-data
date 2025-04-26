@@ -1,5 +1,6 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-npm version patch
 npm run build
-git add .
+git add assets/puzzles.json
+git commit -m "chore: update puzzles.json"
+npm version patch
+git push
+
