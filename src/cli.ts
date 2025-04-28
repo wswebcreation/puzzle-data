@@ -12,7 +12,7 @@ let selectedPuzzle: any | null = null;
 async function loadPuzzles() {
   const raw = await fs.readFile(PUZZLE_FILE, 'utf-8');
   const data = JSON.parse(raw);
-  return data.puzzles;
+  return data;
 }
 
 async function selectPuzzle(puzzles: any[]) {
