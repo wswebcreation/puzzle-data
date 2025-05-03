@@ -12,6 +12,7 @@ export const Colors = {
   pink: "#da96b2",
   purple: '#b096da',
   red: '#fb6b55',
+  softAqua: '#95cdd0',
   white: '#fff',
   yellow: '#dbf07e',
 };
