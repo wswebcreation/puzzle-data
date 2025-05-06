@@ -16,5 +16,8 @@
     "chokidar": "^4.0.3",
     "nodemon": "^3.1.10",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "jimp": "^1.6.0"
   }
 }
