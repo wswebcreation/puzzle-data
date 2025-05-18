@@ -227,7 +227,7 @@ const drawPuzzleGrid = (puzzleData) => {
 
 const drawPuzzle = (puzzle) => {
     console.log('\nPuzzle:');
-    const { size, regions } = puzzle;
+    const { size, regions, queens } = puzzle;
     const grid = Array(size).fill(null).map(() => Array(size).fill(null));
     for (const region of regions) {
         const { color, cells } = region;
@@ -239,12 +239,89 @@ const drawPuzzle = (puzzle) => {
     for (let row = 0; row < size; row++) {
         let rowStr = '';
         for (let col = 0; col < size; col++) {
-            rowStr += `\x1b[48;2;${parseInt(grid[row][col].slice(1, 3), 16)};${parseInt(grid[row][col].slice(3, 5), 16)};${parseInt(grid[row][col].slice(5, 7), 16)}m   \x1b[0m`;
+            const isQueen = queens?.some(([qRow, qCol]) => qRow === row && qCol === col);
+            const cellColor = grid[row][col];
+            if (isQueen) {
+                rowStr += `\x1b[48;2;${parseInt(cellColor.slice(1, 3), 16)};${parseInt(cellColor.slice(3, 5), 16)};${parseInt(cellColor.slice(5, 7), 16)}m Q \x1b[0m`;
+            } else {
+                rowStr += `\x1b[48;2;${parseInt(cellColor.slice(1, 3), 16)};${parseInt(cellColor.slice(3, 5), 16)};${parseInt(cellColor.slice(5, 7), 16)}m   \x1b[0m`;
+            }
         }
         console.log(rowStr);
     }
     console.log('\n###################################')
 }
+
+function isAdjacent(pos1, pos2) {
+    const [r1, c1] = pos1;
+    const [r2, c2] = pos2;
+    return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1;
+  }
+  
+  function getRegionId(puzzle, row, col) {
+    return puzzle.regions.find(r =>
+      r.cells.some(([r0, c0]) => r0 === row && c0 === col)
+    ).id;
+  }
+  
+function solvePuzzle(puzzle) {
+    const size = puzzle.size;
+    const queens = [];
+    const usedCols = new Set();
+    const usedRegions = new Set();
+  
+    function isSafe(row, col) {
+      // No other queen in this column
+      if (usedCols.has(col)) return false;
+  
+      // No other queen in the same region
+      const regionId = getRegionId(puzzle, row, col);
+      if (!regionId || usedRegions.has(regionId)) return false;
+  
+      // No adjacent queens
+      for (const [qr, qc] of queens) {
+        if (isAdjacent([row, col], [qr, qc])) {
+          return false;
+        }
+      }
+  
+      return true;
+    }
+  
+    function backtrack(row) {
+      if (row === size) return true;
+  
+      const rowCandidates= [];
+      for (let col = 0; col < size; col++) {
+        rowCandidates.push([row, col]);
+      }
+  
+      for (const [r, c] of rowCandidates) {
+        const regionId = getRegionId(puzzle, r, c);
+        if (!regionId) continue;
+  
+        if (isSafe(r, c)) {
+          queens.push([r, c]);
+          usedCols.add(c);
+          usedRegions.add(regionId);
+  
+          if (backtrack(row + 1)) return true;
+  
+          // backtrack
+          queens.pop();
+          usedCols.delete(c);
+          usedRegions.delete(regionId);
+        }
+      }
+  
+      return false;
+    }
+  
+    const success = backtrack(0);
+    return success ? queens : null;
+  }
+  
+  
 
 // Main execution
 (async () => {
@@ -325,19 +402,21 @@ const drawPuzzle = (puzzle) => {
         }
 
         // Step 6: Create logic to determine the queens and add them to the puzzle in a new array call queens
-        // Each queen is an array with a row and column
-        // This should be the logic to determine the queens:
-        //  'Your goal is to place exactly one 👑 in every row, column, and colored region.',
-        // 'Tap once to place an ✕ and tap twice to place a 👑.',
-        // 'Use ✕ to mark where a 👑 cannot be placed.',
-        // 'Two 👑 cannot touch each other, not even diagonally.',
-        const queens = [];
+        const queens = solvePuzzle(puzzle);
+        if (!queens) {
+            console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
+        } else {
+            console.log(`✅ Puzzle ${puzzle.id} solved!`);
+            puzzle.queens = queens;
+        }
 
-
+        // console.log(puzzle.queens);
         // console.log(JSON.stringify(puzzle, null, 2));
         // Add the puzzle to the array
         puzzles.push(puzzle);
 
         drawPuzzle(puzzle);
     }
+
+    await fs.writeFile('assets/puzzles-generated.json', JSON.stringify(puzzles, null, 2));
 })();
