@@ -225,6 +225,27 @@ const drawPuzzleGrid = (puzzleData) => {
     console.log('\n###################################')
 }
 
+const drawPuzzle = (puzzle) => {
+    console.log('\nPuzzle:');
+    const { size, regions } = puzzle;
+    const grid = Array(size).fill(null).map(() => Array(size).fill(null));
+    for (const region of regions) {
+        const { color, cells } = region;
+        for (const cell of cells) {
+            const [row, col] = cell;
+            grid[row][col] = color;
+        }
+    }
+    for (let row = 0; row < size; row++) {
+        let rowStr = '';
+        for (let col = 0; col < size; col++) {
+            rowStr += `\x1b[48;2;${parseInt(grid[row][col].slice(1, 3), 16)};${parseInt(grid[row][col].slice(3, 5), 16)};${parseInt(grid[row][col].slice(5, 7), 16)}m   \x1b[0m`;
+        }
+        console.log(rowStr);
+    }
+    console.log('\n###################################')
+}
+
 // Main execution
 (async () => {
     let puzzleNumbers = [];
@@ -238,6 +259,7 @@ const drawPuzzleGrid = (puzzleData) => {
             .filter(file => file.endsWith('.png'))
             .map(file => file.replace('.png', ''));
     }
+    const puzzles = [];
 
     for (const puzzleNumber of puzzleNumbers) {
         const image = await Jimp.read(`images/${puzzleNumber}.png`);
@@ -270,10 +292,7 @@ const drawPuzzleGrid = (puzzleData) => {
         console.log("\u{1F4CF} Table ends at x =", tableEndX);
         console.log("\u{1F4CF} Table width =", tableWidth);
 
-        // Step 4: Determine the number of rows and columns with their respective bounds
-        //         We know that the amount of rows is the same as the number of columns
-        // Width and height of each cell is tableWidth / numCols
-        const cellWidth = tableWidth / numCols;
+        // Step 4: Determine the colors per cell
         const puzzleData = parseCells({
             image,
             tableStartX,
@@ -282,6 +301,43 @@ const drawPuzzleGrid = (puzzleData) => {
             numCols,
         });
 
-        drawPuzzleGrid(puzzleData);
+        // Step 5: parse the puzzle data 
+        const puzzle = {
+            id: puzzleNumber,
+            size: numCols,
+            regions: [],
+        }
+        for (let row = 0; row < numCols; row++) {
+            for (let col = 0; col < numCols; col++) {
+                const cell = puzzleData.cells[row][col];
+                const region = {
+                    id: cell.color,
+                    color: Colors[cell.color],
+                    cells: [[row, col]]
+                }
+                if (!puzzle.regions.find(r => r.color === region.color)) {
+                    puzzle.regions.push(region);
+                } else {
+                    const existingRegion = puzzle.regions.find(r => r.color === region.color);
+                    existingRegion.cells.push([row, col]);
+                }
+            }
+        }
+
+        // Step 6: Create logic to determine the queens and add them to the puzzle in a new array call queens
+        // Each queen is an array with a row and column
+        // This should be the logic to determine the queens:
+        //  'Your goal is to place exactly one 👑 in every row, column, and colored region.',
+        // 'Tap once to place an ✕ and tap twice to place a 👑.',
+        // 'Use ✕ to mark where a 👑 cannot be placed.',
+        // 'Two 👑 cannot touch each other, not even diagonally.',
+        const queens = [];
+
+
+        // console.log(JSON.stringify(puzzle, null, 2));
+        // Add the puzzle to the array
+        puzzles.push(puzzle);
+
+        drawPuzzle(puzzle);
     }
 })();
