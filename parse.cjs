@@ -303,7 +303,7 @@ function solvePuzzle(puzzle) {
 // Parse the puzzle data to create a puzzle object
 function parsePuzzle({numCols, puzzleData, puzzleNumber}) {
     const puzzle = {
-        id: puzzleNumber,
+        id: Number(puzzleNumber),
         size: numCols,
         regions: [],
     }
