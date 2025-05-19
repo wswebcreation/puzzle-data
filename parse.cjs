@@ -135,6 +135,7 @@ const scanVerticalLines = (image, width, maxScanHeight, rowScanHeight, lineThres
 
     const blackXPositions = blackXPositionsPerRow.flat();
     const cleanVerticalLines = dedup(blackXPositions, 3); 
+    console.log('cleanVerticalLines', cleanVerticalLines);
 
     return {
         blackXPositions: cleanVerticalLines,
@@ -181,7 +182,7 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
             const cellStartX = tableStartX + (col * tableWidth) / numCols;
             const cellStartY = tableStartY + (row * tableWidth) / numCols;
             // console.log(`Cell ${col},${row} starts at x=${cellStartX} and y=${cellStartY}`);
-            const cellColor = getCellColor({ image, cellStartX, cellStartY, scanWidth: 20, scanHeight: 20 });
+            const cellColor = getCellColor({ image, cellStartX, cellStartY, scanWidth: 40, scanHeight: 40 });
             const closestColor = Object.entries(Colors).reduce((closest, [colorName, hexColor]) => {
                 // Convert hex to RGB
                 const hex = hexColor.replace('#', '');
@@ -344,7 +345,7 @@ async function readPuzzleImages() {
     const puzzles = [];
     const maxVerticalPixelScanHeight = 50;      // number of vertical pixels to scan to find a horizontal line
     const horizontalBlackLineThreshold = 15;    // number of black pixels to treat multiple black pixels as a line
-    const verticalRowScanHeight = 6;            // number of vertical pixels to scan in each column
+    const verticalRowScanHeight = 10;            // number of vertical pixels to scan in each column
 
     // Read all puzzle images
     const puzzleNumbers = await readPuzzleImages();
@@ -388,14 +389,20 @@ async function readPuzzleImages() {
 
         // Step 5: Create logic to determine the queens and add them to the puzzle in a new array call queens
         const queens = solvePuzzle(puzzle);
-        if (!queens) {
+        const incomplete = puzzle.regions.length !== puzzle.size;
+        if (!queens || incomplete) {
             console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
+            // When there is no solution or the puzzle is incomplete, move the file to a folder called fails
+            await fs.rename(
+                `images/${puzzleNumber}.png`,
+                `images/fails/${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`
+            );
         } else {
             console.log(`✅ Puzzle ${puzzle.id} solved!`);
             puzzle.queens = queens;
             puzzles.push(puzzle);
-            drawPuzzleToTerminal(puzzle);
         }
+        drawPuzzleToTerminal(puzzle);
     }
 
     // Step 6: Write the puzzles to a file
