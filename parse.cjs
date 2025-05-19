@@ -49,7 +49,7 @@ const avgColor = (pixels) => {
 };
 
 // Check if contrast between pixel groups on each side of x is large
-const isContrastLine = (image, x, y, window = 2, threshold = 60) => {
+const isContrastLine = ({image, x, y, window = 2, threshold = 60}) => {
     const before = [], after = [];
     for (let i = -window; i < 0; i++) {
         before.push(intToRGBA(image.getPixelColor(x + i, y)));
@@ -61,7 +61,7 @@ const isContrastLine = (image, x, y, window = 2, threshold = 60) => {
     return dist > threshold;
 };
 
-// Step 2: Deduplicate near-duplicate lines (antialiasing or thick lines)
+// Deduplicate near-duplicate lines (antialiasing or thick lines)
 // Group nearby X positions and average them to represent one clean line
 const dedup = (arr, gap = 3) => {
     if (arr.length === 0) return [];
@@ -86,46 +86,38 @@ const dedup = (arr, gap = 3) => {
     );
 };
 
-// Step 1: Scan rows to find cell rows (rows with black pixels but without full vertical lines)
+// Scan rows to find cell rows (rows with black pixels but without full vertical lines)
 const scanVerticalLines = (image, width, maxScanHeight, rowScanHeight, lineThreshold) => {
-    const blackXPositionsPerRow = []; // Stores black x positions for each valid row
-    let validRowStreak = 0; // counts how many consecutive valid cell rows we've seen
+    const blackXPositionsPerRow = [];
+    let validRowStreak = 0; 
     let tableStartY = null;
 
     for (let y = 0; y < maxScanHeight; y++) {
-        // console.log(`Scanning row ${y}`);
-
         let verticalBlackLineCount = 0;
-        let currentRowXPositions = []; // holds X positions for black pixels in this row
+        let currentRowXPositions = []; 
 
-        for (let x = 2; x < width - 2; x++) { // Start from 2 to allow contrast window
+        for (let x = 2; x < width - 2; x++) {
             let blackX = 0;
             const color = intToRGBA(image.getPixelColor(x, y));
-
-            // Check if pixel is a "line" based on either blackness or contrast
-            const pixelIsLine =
-                isBlack(color) ||
-                isContrastLine(image, x, y, 2, 60); // window=2, threshold=60
+            const pixelIsLine = isBlack(color) || isContrastLine({image, x, y, window: 2, threshold: 60});
 
             // If we found a black or contrast pixel, we need to check if we have a vertical black line
             if (pixelIsLine) {
-                blackX = x; // We have a black or contrast pixel at position x
-                verticalBlackLineCount++; // Start counting if we get a vertical black line
-                currentRowXPositions.push(x); // Track black x positions for this row
+                blackX = x;
+                verticalBlackLineCount++;
+                currentRowXPositions.push(x);
 
                 // Check if we have a vertical black line based on the threshold
                 if (verticalBlackLineCount === lineThreshold) {
-                    // console.log(`⚠️ Vertical grid line detected at row y=${y}`);
                     if (tableStartY === null) {
-                        // console.log(`🎯 Found table start at Y = ${y}`);
                         tableStartY = y;
                     }
-                    validRowStreak = 0; // Reset streak because this is not a valid data row
-                    currentRowXPositions = []; // Discard current row positions
-                    break; // Stop scanning this row
+                    validRowStreak = 0;
+                    currentRowXPositions = [];
+                    break;
                 }
             } else {
-                verticalBlackLineCount = 0; // Reset count on gap
+                verticalBlackLineCount = 0;
             }
         }
 
@@ -133,19 +125,19 @@ const scanVerticalLines = (image, width, maxScanHeight, rowScanHeight, lineThres
         if (currentRowXPositions.length > 0) {
             blackXPositionsPerRow.push(currentRowXPositions); // Save x positions for this row
             validRowStreak++;
-            // console.log(`✅ Valid row at y=${y} (row ${validRowStreak}/${rowScanHeight})`);
         }
 
         // Stop once we've collected enough valid cell rows
         if (validRowStreak === rowScanHeight) {
-            // console.log(`🎯 Stopping after ${rowScanHeight} valid cell rows.`);
             break;
         }
     }
 
+    const blackXPositions = blackXPositionsPerRow.flat();
+    const cleanVerticalLines = dedup(blackXPositions, 3); 
+
     return {
-        // Flatten all black x positions from all valid rows
-        blackXPositions: blackXPositionsPerRow.flat(),
+        blackXPositions: cleanVerticalLines,
         tableStartY
     };
 };
@@ -211,21 +203,7 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
     return puzzleData;
 }
 
-const drawPuzzleGrid = (puzzleData) => {
-    console.log('\nPuzzle Grid:');
-    for (let row = 0; row < puzzleData.size; row++) {
-        let rowStr = '';
-        for (let col = 0; col < puzzleData.size; col++) {
-            const cell = puzzleData.cells[row][col];
-            rowStr += `\x1b[48;2;${parseInt(cell.hexColor.slice(1,3),16)};${parseInt(cell.hexColor.slice(3,5),16)};${parseInt(cell.hexColor.slice(5,7),16)}m   \x1b[0m`;
-        }
-        console.log(rowStr);
-    }
-
-    console.log('\n###################################')
-}
-
-const drawPuzzle = (puzzle) => {
+const drawPuzzleToTerminal = (puzzle) => {
     console.log('\nPuzzle:');
     const { size, regions, queens } = puzzle;
     const grid = Array(size).fill(null).map(() => Array(size).fill(null));
@@ -321,31 +299,62 @@ function solvePuzzle(puzzle) {
     return success ? queens : null;
   }
   
-  
-
-// Main execution
-(async () => {
-    let puzzleNumbers = [];
-    if (process.argv[2]) {
-        // Single puzzle number provided
-        puzzleNumbers = [process.argv[2]];
-    } else {
-        // Read all PNG files from images folder
-        const files = await fs.readdir('images');
-        puzzleNumbers = files
-            .filter(file => file.endsWith('.png'))
-            .map(file => file.replace('.png', ''));
+// Parse the puzzle data to create a puzzle object
+function parsePuzzle({numCols, puzzleData, puzzleNumber}) {
+    const puzzle = {
+        id: puzzleNumber,
+        size: numCols,
+        regions: [],
     }
-    const puzzles = [];
+    for (let row = 0; row < numCols; row++) {
+        for (let col = 0; col < numCols; col++) {
+            const cell = puzzleData.cells[row][col];
+            const region = {
+                id: cell.color,
+                color: Colors[cell.color],
+                cells: [[row, col]]
+            }
+            if (!puzzle.regions.find(r => r.color === region.color)) {
+                puzzle.regions.push(region);
+            } else {
+                const existingRegion = puzzle.regions.find(r => r.color === region.color);
+                existingRegion.cells.push([row, col]);
+            }
+        }
+    }
 
+    return puzzle;
+}
+
+// Read all puzzle images
+async function readPuzzleImages() {
+    if (process.argv[2]) {
+        return [process.argv[2]];
+    } 
+
+    const files = await fs.readdir('images');
+    return files
+        .filter(file => file.endsWith('.png'))
+        .map(file => file.replace('.png', ''));
+    
+}
+  
+(async () => {
+    // Some variables
+    const puzzles = [];
+    const maxVerticalPixelScanHeight = 50;      // number of vertical pixels to scan to find a horizontal line
+    const horizontalBlackLineThreshold = 15;    // number of black pixels to treat multiple black pixels as a line
+    const verticalRowScanHeight = 6;            // number of vertical pixels to scan in each column
+
+    // Read all puzzle images
+    const puzzleNumbers = await readPuzzleImages();
+
+    // Parse each puzzle image
     for (const puzzleNumber of puzzleNumbers) {
         const image = await Jimp.read(`images/${puzzleNumber}.png`);
         const { width } = image.bitmap;
 
-        const maxVerticalPixelScanHeight = 50; // number of vertical pixels to scan to find a horizontal line
-        const horizontalBlackLineThreshold = 15; // number of black pixels to treat multiple black pixels as a line
-        const verticalRowScanHeight = 6; // number of vertical pixels to scan in each column
-
+        // Step 1: Scan for vertical lines, these are the start x positions of the columns. Also returns the y position of the table
         const { blackXPositions, tableStartY } = scanVerticalLines(
             image,
             width,
@@ -353,23 +362,19 @@ function solvePuzzle(puzzle) {
             verticalRowScanHeight,
             horizontalBlackLineThreshold
         );
-        const cleanVerticalLines = dedup(blackXPositions, 3); // Use average-based deduplication
 
-        // Step 3: Calculate columns and table bounds
-        const numCols = cleanVerticalLines.length - 1;
-        const tableStartX = cleanVerticalLines[0];
-        const tableEndX = cleanVerticalLines[cleanVerticalLines.length - 1];
+        // Step 2: Calculate columns and table bounds
+        const numCols = blackXPositions.length - 1;
+        const tableStartX = blackXPositions[0];
+        const tableEndX = blackXPositions[blackXPositions.length - 1];
         const tableWidth = tableEndX - tableStartX;
 
-        console.log("\n\u{1F9E9} Scanning puzzle number:", puzzleNumber, "\n");
-        // console.log("\u{1F4D0} Vertical grid lines at X:", cleanVerticalLines);
-        console.log("\u{1F9EE} Number of columns:", numCols);
-        console.log("\u{1F4CF} Table starts at x =", tableStartX);
-        console.log("\u{1F4CF} Table starts at y =", tableStartY);
-        console.log("\u{1F4CF} Table ends at x =", tableEndX);
-        console.log("\u{1F4CF} Table width =", tableWidth);
+        console.log(`\n\u{1F9E9} Scanning puzzle number: ${puzzleNumber}\n`);
+        console.log(`\u{1F9EE} Number of columns: ${numCols}`);
+        console.log(`\u{1F4CF} Table starts at x = ${tableStartX} and y = ${tableStartY}`);
+        console.log(`\u{1F4CF} Table width = ${tableWidth}`);
 
-        // Step 4: Determine the colors per cell
+        // Step 3: Determine the colors per cell
         const puzzleData = parseCells({
             image,
             tableStartX,
@@ -378,45 +383,21 @@ function solvePuzzle(puzzle) {
             numCols,
         });
 
-        // Step 5: parse the puzzle data 
-        const puzzle = {
-            id: puzzleNumber,
-            size: numCols,
-            regions: [],
-        }
-        for (let row = 0; row < numCols; row++) {
-            for (let col = 0; col < numCols; col++) {
-                const cell = puzzleData.cells[row][col];
-                const region = {
-                    id: cell.color,
-                    color: Colors[cell.color],
-                    cells: [[row, col]]
-                }
-                if (!puzzle.regions.find(r => r.color === region.color)) {
-                    puzzle.regions.push(region);
-                } else {
-                    const existingRegion = puzzle.regions.find(r => r.color === region.color);
-                    existingRegion.cells.push([row, col]);
-                }
-            }
-        }
+        // Step 4: parse the puzzle data to create a puzzle object
+        const puzzle = parsePuzzle({numCols, puzzleData, puzzleNumber});
 
-        // Step 6: Create logic to determine the queens and add them to the puzzle in a new array call queens
+        // Step 5: Create logic to determine the queens and add them to the puzzle in a new array call queens
         const queens = solvePuzzle(puzzle);
         if (!queens) {
             console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
         } else {
             console.log(`✅ Puzzle ${puzzle.id} solved!`);
             puzzle.queens = queens;
+            puzzles.push(puzzle);
+            drawPuzzleToTerminal(puzzle);
         }
-
-        // console.log(puzzle.queens);
-        // console.log(JSON.stringify(puzzle, null, 2));
-        // Add the puzzle to the array
-        puzzles.push(puzzle);
-
-        drawPuzzle(puzzle);
     }
 
-    await fs.writeFile('assets/puzzles-generated.json', JSON.stringify(puzzles, null, 2));
+    // Step 6: Write the puzzles to a file
+    await fs.writeFile('assets/puzzles-generated.json', JSON.stringify(puzzles));
 })();
