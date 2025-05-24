@@ -16,6 +16,8 @@ const Colors = {
     purple: '#b096da',
     red: '#fb6b55',
     softAqua: '#95cdd0',
+    // paleAqua: '#abd0d4',
+    // vividAqua: '#8aebe5',
     white: '#fff',
     yellow: '#dbf07e',
 };
