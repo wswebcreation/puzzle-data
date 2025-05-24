@@ -16,8 +16,8 @@ const Colors = {
     purple: '#b096da',
     red: '#fb6b55',
     softAqua: '#95cdd0',
-    // paleAqua: '#abd0d4',
-    // vividAqua: '#8aebe5',
+    paleAqua: '#abd0d4',
+    vividAqua: '#8aebe5',
     white: '#fff',
     yellow: '#dbf07e',
 };
@@ -179,24 +179,45 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
         cells: Array(numCols).fill(null).map(() => Array(numCols).fill(null))
     };
 
+    // Color distance threshold - colors closer than this will be considered the same
+    const COLOR_DISTANCE_THRESHOLD = 30;
+
     for (let row = 0; row < numCols; row++) {
         for (let col = 0; col < numCols; col++) {
             const cellStartX = tableStartX + (col * tableWidth) / numCols;
             const cellStartY = tableStartY + (row * tableWidth) / numCols;
-            // console.log(`Cell ${col},${row} starts at x=${cellStartX} and y=${cellStartY}`);
             const cellColor = getCellColor({ image, cellStartX, cellStartY, scanWidth: 40, scanHeight: 40 });
-            const closestColor = Object.entries(Colors).reduce((closest, [colorName, hexColor]) => {
-                // Convert hex to RGB
+            
+            // First pass: find colors that are very close to the cell color
+            const closeColors = Object.entries(Colors).filter(([_, hexColor]) => {
                 const hex = hexColor.replace('#', '');
                 const color = {
                     r: parseInt(hex.substring(0, 2), 16),
                     g: parseInt(hex.substring(2, 4), 16), 
                     b: parseInt(hex.substring(4, 6), 16)
                 };
-                const distance = colorDistance(cellColor, color);
-                return distance < closest.distance ? { colorName, distance, hexColor } : closest;
-            }, { colorName: 'unknown', distance: Infinity, hexColor: '#000000' });
-            // console.log(`Cell ${col},${row} color: ${closestColor.colorName}`);
+                return colorDistance(cellColor, color) < COLOR_DISTANCE_THRESHOLD;
+            });
+
+            // If we found close colors, use the first one
+            // Otherwise fall back to the closest color
+            let closestColor;
+            if (closeColors.length > 0) {
+                const [colorName, hexColor] = closeColors[0];
+                closestColor = { colorName, distance: 0, hexColor };
+            } else {
+                closestColor = Object.entries(Colors).reduce((closest, [colorName, hexColor]) => {
+                    const hex = hexColor.replace('#', '');
+                    const color = {
+                        r: parseInt(hex.substring(0, 2), 16),
+                        g: parseInt(hex.substring(2, 4), 16), 
+                        b: parseInt(hex.substring(4, 6), 16)
+                    };
+                    const distance = colorDistance(cellColor, color);
+                    return distance < closest.distance ? { colorName, distance, hexColor } : closest;
+                }, { colorName: 'unknown', distance: Infinity, hexColor: '#000000' });
+            }
+
             puzzleData.cells[row][col] = {
                 color: closestColor.colorName,
                 hexColor: closestColor.hexColor
