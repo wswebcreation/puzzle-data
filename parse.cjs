@@ -89,7 +89,7 @@ const dedup = (arr, gap = 3) => {
 };
 
 // Scan rows to find cell rows (rows with black pixels but without full vertical lines)
-const scanVerticalLines = (image, width, maxScanHeight, rowScanHeight, lineThreshold) => {
+const scanVerticalLines = ({image, width, maxScanHeight, rowScanHeight, lineThreshold, puzzleNumber}) => {
     const blackXPositionsPerRow = [];
     let validRowStreak = 0; 
     let tableStartY = null;
@@ -97,11 +97,17 @@ const scanVerticalLines = (image, width, maxScanHeight, rowScanHeight, lineThres
     for (let y = 0; y < maxScanHeight; y++) {
         let verticalBlackLineCount = 0;
         let currentRowXPositions = []; 
+        // There are puzzles that for some reason can't handle the default threshold, so we need to manually set it
+        const thresholdPuzzles = {
+            172: 55,
+            320: 55,
+        }
 
         for (let x = 2; x < width - 2; x++) {
             let blackX = 0;
             const color = intToRGBA(image.getPixelColor(x, y));
-            const pixelIsLine = isBlack(color) || isContrastLine({image, x, y, window: 2, threshold: 60});
+            const threshold = thresholdPuzzles[puzzleNumber] || 60;
+            const pixelIsLine = isBlack(color, threshold) || isContrastLine({image, x, y, window: 2, threshold});
 
             // If we found a black or contrast pixel, we need to check if we have a vertical black line
             if (pixelIsLine) {
@@ -367,8 +373,8 @@ async function readPuzzleImages() {
     // Some variables
     const puzzles = [];
     const maxVerticalPixelScanHeight = 50;      // number of vertical pixels to scan to find a horizontal line
-    const horizontalBlackLineThreshold = 15;    // number of black pixels to treat multiple black pixels as a line
-    const verticalRowScanHeight = 10;            // number of vertical pixels to scan in each column
+    const horizontalBlackLineThreshold = 25;    // number of black pixels to treat multiple black pixels as a line
+    const verticalRowScanHeight = 25;            // number of vertical pixels to scan in each column
 
     // Read all puzzle images
     const puzzleNumbers = await readPuzzleImages();
@@ -379,13 +385,14 @@ async function readPuzzleImages() {
         const { width } = image.bitmap;
 
         // Step 1: Scan for vertical lines, these are the start x positions of the columns. Also returns the y position of the table
-        const { blackXPositions, tableStartY } = scanVerticalLines(
+        const { blackXPositions, tableStartY } = scanVerticalLines({
             image,
+            lineThreshold: horizontalBlackLineThreshold,
+            maxScanHeight:maxVerticalPixelScanHeight,
+            puzzleNumber,
+            rowScanHeight:verticalRowScanHeight,
             width,
-            maxVerticalPixelScanHeight,
-            verticalRowScanHeight,
-            horizontalBlackLineThreshold
-        );
+        });
 
         // Step 2: Calculate columns and table bounds
         const numCols = blackXPositions.length - 1;
