@@ -19,7 +19,9 @@ const Colors = {
     paleAqua: '#abd0d4',
     vividAqua: '#8aebe5',
     white: '#fff',
-    yellow: '#dbf07e',
+    yellow: '#dbf07e',      
+    goldenYellow: '#f3de5e',
+    lightYellow: '#e3f190',  
 };
 // Define what counts as "black" using luma (brightness)
 const isBlack = ({ r, g, b }, threshold = 60) => {
@@ -99,6 +101,7 @@ const scanVerticalLines = ({image, width, maxScanHeight, rowScanHeight, lineThre
         let currentRowXPositions = []; 
         // There are puzzles that for some reason can't handle the default threshold, so we need to manually set it
         const thresholdPuzzles = {
+            // 100:20,
             172: 55,
             320: 55,
         }
@@ -185,8 +188,9 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
         cells: Array(numCols).fill(null).map(() => Array(numCols).fill(null))
     };
 
-    // Color distance threshold - colors closer than this will be considered the same
+    // Color distance thresholds
     const COLOR_DISTANCE_THRESHOLD = 30;
+    const YELLOW_DISTANCE_THRESHOLD = 20; // Lower threshold for yellows since they're closer together
 
     for (let row = 0; row < numCols; row++) {
         for (let col = 0; col < numCols; col++) {
@@ -195,14 +199,17 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
             const cellColor = getCellColor({ image, cellStartX, cellStartY, scanWidth: 40, scanHeight: 40 });
             
             // First pass: find colors that are very close to the cell color
-            const closeColors = Object.entries(Colors).filter(([_, hexColor]) => {
+            const closeColors = Object.entries(Colors).filter(([colorName, hexColor]) => {
                 const hex = hexColor.replace('#', '');
                 const color = {
                     r: parseInt(hex.substring(0, 2), 16),
                     g: parseInt(hex.substring(2, 4), 16), 
                     b: parseInt(hex.substring(4, 6), 16)
                 };
-                return colorDistance(cellColor, color) < COLOR_DISTANCE_THRESHOLD;
+                // Use a lower threshold for yellow colors
+                const threshold = colorName.toLowerCase().includes('yellow') ? 
+                    YELLOW_DISTANCE_THRESHOLD : COLOR_DISTANCE_THRESHOLD;
+                return colorDistance(cellColor, color) < threshold;
             });
 
             // If we found close colors, use the first one
@@ -368,7 +375,7 @@ async function readPuzzleImages() {
         .map(file => file.replace('.png', ''));
     
 }
-  
+
 (async () => {
     // Some variables
     const puzzles = [];
