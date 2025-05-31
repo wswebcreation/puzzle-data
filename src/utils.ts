@@ -122,14 +122,12 @@ export function scanVerticalLines({image, width, maxScanHeight, rowScanHeight, l
       }
 
       for (let x = 2; x < width - 2; x++) {
-          let blackX = 0;
           const color = intToRGBA(image.getPixelColor(x, y));
           const threshold = thresholdPuzzles[puzzleNumber] || 60;
           const pixelIsLine = isBlack(color, threshold) || isContrastLine({image, x, y, window: 2, threshold});
 
           // If we found a black or contrast pixel, we need to check if we have a vertical black line
           if (pixelIsLine) {
-              blackX = x;
               verticalBlackLineCount++;
               currentRowXPositions.push(x);
 
@@ -210,7 +208,7 @@ export function parseCells({image, tableStartX, tableStartY, tableWidth, numCols
           const cellColor = getCellColor({ image, cellStartX, cellStartY, scanWidth: 40, scanHeight: 40 });
           
           // First pass: find colors that are very close to the cell color
-          const closeColors = Object.entries(Colors).filter(([colorName, hexColor]) => {
+          const closeColors = Object.entries(Colors).filter(([hexColor]) => {
               const hex = hexColor.replace('#', '');
               const color = {
                   r: parseInt(hex.substring(0, 2), 16),

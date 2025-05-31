@@ -1,3 +1,7 @@
+import { Jimp } from 'jimp';
+
+type JimpImage = typeof Jimp.prototype;
+
 export type CellCoord = [number, number];
 
 export interface RGB {
@@ -21,7 +25,7 @@ export interface Puzzle {
 }
 
 export interface ContrastLineParams {
-  image: any;
+  image: JimpImage;
   x: number;
   y: number;
   window?: number;
@@ -29,7 +33,7 @@ export interface ContrastLineParams {
 }
 
 export interface ScanVerticalLinesParams {
-  image: any;
+  image: JimpImage;
   width: number;
   maxScanHeight: number;
   rowScanHeight: number;
@@ -38,7 +42,7 @@ export interface ScanVerticalLinesParams {
 }
 
 export interface GetCellColorParams {
-  image: any;
+  image: JimpImage;
   cellStartX: number;
   cellStartY: number;
   scanWidth: number;
@@ -46,7 +50,7 @@ export interface GetCellColorParams {
 }
 
 export interface ParseCellsParams {
-  image: any;
+  image: JimpImage;
   tableStartX: number;
   tableStartY: number;
   tableWidth: number;
