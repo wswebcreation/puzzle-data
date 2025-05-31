@@ -19,6 +19,7 @@ This project analyzes queen puzzle grid images to generate structured JSON data 
   - Watch mode for automatic rebuilding
   - Detailed logging of processing steps
   - Clean separation between source and output
+  - Custom image folder support via command line
 
 ---
 
@@ -33,11 +34,15 @@ npm install
 ### 2. Build once manually
 
 ```bash
+# Use default images folder
 npm run build
+
+# Or specify a custom folder
+npm run build -- --folder=custom/path/to/images
 ```
 
 This will:
-- Scan the images folder for puzzle grids
+- Scan the specified images folder (or default `images` folder) for puzzle grids
 - Process each image to:
   - Detect grid dimensions
   - Calculate table start/end positions and width
@@ -52,11 +57,15 @@ This will:
 ### 3. Start in watch mode (for development)
 
 ```bash
-npm run watch
+# Use default images folder
+npm run dev
+
+# Or specify a custom folder
+npm run dev -- --folder=custom/path/to/images
 ```
 
 This will:
-- Monitor the images folder for changes
+- Monitor the specified images folder (or default `images` folder) for changes
 - Automatically process new or modified images
 - Update `assets/puzzles.json` with new puzzle data
 - Update `assets/version.json` when puzzle data changes
@@ -69,7 +78,9 @@ This will:
 | Command | Description |
 |:--------|:------------|
 | `npm run build` | Process all images and generate puzzles.json and version.json |
+| `npm run build -- --folder=path` | Process images from a custom folder |
 | `npm run dev` | Start watch mode to process images and rebuild on changes |
+| `npm run dev -- --folder=path` | Start watch mode with a custom images folder |
 
 ---
 
@@ -87,6 +98,8 @@ This will:
   - Grid dimensions
   - Queen placements (solutions)
   - Color mappings
+- Custom image folders can be specified using the `--folder` flag
+- If no folder is specified, the default `images` folder is used
 
 ---
 

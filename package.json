@@ -6,7 +6,7 @@
   "main": "dist/build.js",
   "scripts": {
     "build": "tsc && node dist/build.js",
-    "dev": "nodemon",
+    "dev": "tsx watch src/build.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix"
   },
@@ -15,7 +15,7 @@
     "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.33.0",
     "eslint": "^9.28.0",
-    "nodemon": "^3.1.10",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   },
   "dependencies": {

@@ -8,7 +8,30 @@ import { Puzzle } from './types.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const assetsDir = path.resolve(__dirname, '../assets');
-const imagesDir = path.resolve(__dirname, '../images');
+
+// Parse command line arguments
+function parseArgs() {
+  // Skip the first two arguments (node and script path) and any '--' argument
+  const args = process.argv.slice(2).filter(arg => arg !== '--');
+  let imagesDir = path.resolve(__dirname, '../images'); // default value
+
+  console.log('Arguments received:', args);
+
+  for (const arg of args) {
+    if (arg.startsWith('--folder=')) {
+      imagesDir = path.resolve(process.cwd(), arg.split('=')[1]);
+    } else if (!arg.startsWith('--')) {
+      // If it's not a named argument and we haven't set the folder yet, use it as positional
+      imagesDir = path.resolve(process.cwd(), arg);
+    }
+  }
+
+  console.log(`\n\u{1F9E9} Using images from: ${imagesDir}\n`);
+
+  return { imagesDir };
+}
+
+const { imagesDir } = parseArgs();
 const puzzleOutputPath = path.resolve(assetsDir, 'puzzles.json');
 const versionOutputPath = path.resolve(assetsDir, 'version.json');
 const puzzles: Puzzle[] = [];
@@ -21,7 +44,7 @@ async function build(): Promise<void> {
 
   const puzzleNumbers = readPuzzleImages(imagesDir);
   for (const puzzleNumber of puzzleNumbers) {
-    const image = await Jimp.read(`images/${puzzleNumber}.png`);
+    const image = await Jimp.read(path.join(imagesDir, `${puzzleNumber}.png`));
     const { width } = image.bitmap;
             
     // Step 1: Scan for vertical lines, these are the start x positions of the columns. Also returns the y position of the table
@@ -64,8 +87,8 @@ async function build(): Promise<void> {
         console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
         // copy the image to a folder called fails
         await fs.copyFileSync(
-            `images/${puzzleNumber}.png`,
-            `images/fails/${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`
+            path.join(imagesDir, `${puzzleNumber}.png`),
+            path.join(imagesDir, 'fails', `${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`)
         ); 
     } else {
         console.log(`✅ Puzzle ${puzzle.id} solved!`);
@@ -88,4 +111,3 @@ async function build(): Promise<void> {
 }
 
 build();
-
