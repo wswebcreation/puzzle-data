@@ -1,20 +1,24 @@
 # 🧩 Puzzle Data Builder
 
-This project generates a static JSON file containing puzzle definitions for a side project.
-
-It is designed to make it easy to:
-- **Create**, **edit** and **manage** large sets of puzzles.
-- **Build** a clean JSON output that can be used in any app.
-- **Automatically rebuild** on source changes with a development watch mode.
-
----
+This project analyzes queen puzzle grid images to generate structured JSON data for a custom queens puzzle application. It uses Jimp for image processing to:
+- Calculate grid dimensions (rows/columns/cells)
+- Detect and map regions based on color analysis
+- Validate regions by solving the puzzle
+- Generate a JSON file containing regions, colors, and solutions
 
 ## 📦 Features
-- Write the puzzles in **TypeScript** (with full type safety)
-- Convert puzzles into a **compact JSON file** at build time
-- **Auto-resolve** colors or other references if needed
-- **Watch mode** to automatically rebuild on changes
-- Clean separation between source (`src/`) and output (`assets/`)
+- **Image Analysis**
+  - Automatic grid detection and dimension calculation
+  - Color-based region detection and mapping
+  - Solution validation through puzzle solving
+- **Data Generation**
+  - TypeScript-based puzzle definitions
+  - Compact JSON output for the queens app
+  - Version tracking with `version.json`
+- **Development Tools**
+  - Watch mode for automatic rebuilding
+  - Detailed logging of processing steps
+  - Clean separation between source and output
 
 ---
 
@@ -33,8 +37,15 @@ npm run build
 ```
 
 This will:
-- Compile TypeScript
-- Generate `assets/puzzles.json` ready to use.
+- Scan the images folder for puzzle grids
+- Process each image to:
+  - Detect grid dimensions
+  - Calculate table start/end positions and width
+  - Determine regions based on colors
+  - Solve the puzzle to validate regions
+  - Log processing details and solutions
+- Generate `assets/puzzles.json` with the processed data
+- Generate `assets/version.json` to track puzzle data versions
 
 ---
 
@@ -45,23 +56,11 @@ npm run watch
 ```
 
 This will:
-- Automatically rebuild the JSON when you change `src/puzzles.ts` or other source files.
-- Generate `assets/puzzles.json` ready to use.
-
----
-
-### 4. CLI
-
-During step 3. (Start in watch mode) you can open a CLI and select the puzzle you're working on. Make sure you open and the `dev`-mode and this `cli` in two separate windows
-
-```bash
-npm run cli
-```
-
-This will:
-- Ask which puzzle you're working on
-- Watch the `assets/puzzles.json` file for changes
-- Show an output of the puzzle in de CLI
+- Monitor the images folder for changes
+- Automatically process new or modified images
+- Update `assets/puzzles.json` with new puzzle data
+- Update `assets/version.json` when puzzle data changes
+- Log processing details in real-time
 
 ---
 
@@ -69,15 +68,25 @@ This will:
 
 | Command | Description |
 |:--------|:------------|
-| `npm run build` | Compile TypeScript and build puzzles.json |
-| `npm run dev` | Start watch mode to rebuild on file changes |
-| `npm run cli` | Starts a cli where you can, select the puzzle, and see the output in the terminal.<br />Changes to the `puzzles.ts` file will automatically be refreshed in the cli |
+| `npm run build` | Process all images and generate puzzles.json and version.json |
+| `npm run dev` | Start watch mode to process images and rebuild on changes |
 
 ---
 
 ## 🔥 Notes
 
-- Never edit `assets/puzzles.json` manually. Always edit `src/puzzles.ts` and rebuild.
+- Never edit `assets/puzzles.json` or `assets/version.json` manually
+- The project uses Jimp for image processing and analysis
+- Processing logs include:
+  - Number of columns detected
+  - Table start/end positions and width
+  - Puzzle solutions
+  - Region detection results
+- Generated JSON includes:
+  - Region definitions with colors
+  - Grid dimensions
+  - Queen placements (solutions)
+  - Color mappings
 
 ---
 
