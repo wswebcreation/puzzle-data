@@ -104,7 +104,7 @@ async function build(): Promise<void> {
         );
         stats.failed++;
         stats.failedPuzzles.push({
-          id: puzzle.id,
+          id: puzzle.id.toString(),
           reason,
           path: failPath
         });
