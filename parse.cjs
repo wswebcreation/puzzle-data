@@ -2,26 +2,28 @@ const { Jimp } = require("jimp");
 const { intToRGBA } = require("@jimp/utils");
 const fs = require('fs').promises;
 const Colors = {
-    black: '#000',
-    blue: "#85b4fd",
-    brown: '#aea692',
-    green: "#a4da97",
-    grey: '#d9d9d9',
-    lightGrey: '#f6f6f6',
-    orange: '#fcbe84',
-    lavenderMedium: '#d3bceb',
-    lavenderLight: '#eadff5',
-    deepPurple: '#7f5aa3',
-    pink: "#da96b2",
-    purple: '#b096da',
-    red: '#fb6b55',
-    softAqua: '#95cdd0',
-    paleAqua: '#abd0d4',
-    vividAqua: '#8aebe5',
-    white: '#fff',
-    yellow: '#dbf07e',      
-    goldenYellow: '#f3de5e',
-    lightYellow: '#e3f190',  
+    black: '#000000',
+    alto: "#D9D9D9",
+    altoMain: "#DFDFDF",
+    anakiwa: "#96BEFF",
+    bittersweet: "#FF7B60",
+    canCan: "#D895B2",
+    carnation: "#F96C51",
+    celadon: "#B3DFA0",
+    chardonnay: "#FFC992",
+    coldPurple: "#AF96DC",
+    feijoa: "#A6D995",
+    halfBaked: "#95CBCF",
+    lavenderRose: "#FE93F1",
+    lightOrchid: "#DFA0BF",
+    lightWisteria: "#BBA3E2",
+    macNCheese: "#FBBF81",
+    malibu: "#85B5FC",
+    manz: "#DCF079",
+    nomad: "#B9B29E",
+    saharaSand: "#E6F388",
+    tallow: "#ADA68E",
+    turquoiseBlue: "#55EBE2"
 };
 // Define what counts as "black" using luma (brightness)
 const isBlack = ({ r, g, b }, threshold = 60) => {
@@ -187,10 +189,7 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
         size: numCols,
         cells: Array(numCols).fill(null).map(() => Array(numCols).fill(null))
     };
-
-    // Color distance thresholds
-    const COLOR_DISTANCE_THRESHOLD = 30;
-    const YELLOW_DISTANCE_THRESHOLD = 20; // Lower threshold for yellows since they're closer together
+    
 
     for (let row = 0; row < numCols; row++) {
         for (let col = 0; col < numCols; col++) {
@@ -206,10 +205,8 @@ const parseCells = ({ image, tableStartX, tableStartY, tableWidth, numCols }) =>
                     g: parseInt(hex.substring(2, 4), 16), 
                     b: parseInt(hex.substring(4, 6), 16)
                 };
-                // Use a lower threshold for yellow colors
-                const threshold = colorName.toLowerCase().includes('yellow') ? 
-                    YELLOW_DISTANCE_THRESHOLD : COLOR_DISTANCE_THRESHOLD;
-                return colorDistance(cellColor, color) < threshold;
+     
+                return colorDistance(cellColor, color) < 15;
             });
 
             // If we found close colors, use the first one
@@ -429,11 +426,16 @@ async function readPuzzleImages() {
         const incomplete = puzzle.regions.length !== puzzle.size;
         if (!queens || incomplete) {
             console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
-            // When there is no solution or the puzzle is incomplete, move the file to a folder called fails
-            await fs.rename(
+            // copy the image to a folder called fails
+            await fs.copyFile(
                 `images/${puzzleNumber}.png`,
                 `images/fails/${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`
             );
+            // // When there is no solution or the puzzle is incomplete, move the file to a folder called fails
+            // await fs.rename(
+            //     `images/${puzzleNumber}.png`,
+            //     `images/fails/${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`
+            // );
         } else {
             console.log(`✅ Puzzle ${puzzle.id} solved!`);
             puzzle.queens = queens;
