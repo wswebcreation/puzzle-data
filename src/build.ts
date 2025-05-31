@@ -40,9 +40,19 @@ const horizontalBlackLineThreshold = 25;
 const verticalRowScanHeight = 25;
 
 async function build(): Promise<void> {
+  const startTime = Date.now();
+  const stats = {
+    total: 0,
+    succeeded: 0,
+    failed: 0,
+    failedPuzzles: [] as { id: string; reason: string; path: string }[]
+  };
+
   ensureAssetsFolder(assetsDir);
 
   const puzzleNumbers = readPuzzleImages(imagesDir);
+  stats.total = puzzleNumbers.length;
+
   for (const puzzleNumber of puzzleNumbers) {
     const image = await Jimp.read(path.join(imagesDir, `${puzzleNumber}.png`));
     const { width } = image.bitmap;
@@ -84,16 +94,25 @@ async function build(): Promise<void> {
     const queens = solvePuzzle(puzzle);
     const incomplete = puzzle.regions.length !== puzzle.size;
     if (!queens || incomplete) {
+        const reason = incomplete ? 'incomplete' : 'no-solution';
+        const failPath = path.join(imagesDir, 'fails', `${puzzleNumber}-failed-${reason}.png`);
         console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
         // copy the image to a folder called fails
         await fs.copyFileSync(
             path.join(imagesDir, `${puzzleNumber}.png`),
-            path.join(imagesDir, 'fails', `${puzzleNumber}-failed-${incomplete ? 'incomplete' : 'no-solution'}.png`)
-        ); 
+            failPath
+        );
+        stats.failed++;
+        stats.failedPuzzles.push({
+          id: puzzle.id,
+          reason,
+          path: failPath
+        });
     } else {
         console.log(`✅ Puzzle ${puzzle.id} solved!`);
         puzzle.queens = queens;
         puzzles.push(puzzle);
+        stats.succeeded++;
     }
 
     drawPuzzleToTerminal(puzzle);
@@ -107,7 +126,24 @@ async function build(): Promise<void> {
   const versionJson = JSON.stringify(versionOutput);
 
   fs.writeFileSync(versionOutputPath, versionJson, 'utf-8');
-  console.log(`📦 Version updated to: ${newVersion}`);
+  
+  // Print summary
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log('\n📊 Build Summary:');
+  console.log('----------------');
+  console.log(`\u{1F4C8} Total puzzles processed: ${stats.total}`);
+  console.log(`\u{2705} Successfully solved: ${stats.succeeded}`);
+  console.log(`\u{274C} Failed to solve: ${stats.failed}`);
+  console.log(`\u{23F1} Build duration: ${duration}s`);
+  
+  if (stats.failed > 0) {
+    console.log('\n\u{26A0} Failed puzzles:');
+    stats.failedPuzzles.forEach(({ id, reason, path }) => {
+      console.log(`  - ${id} (${reason}): ${path}`);
+    });
+  }
+  
+  console.log(`\n📦 Version updated to: ${newVersion}`);
 }
 
 build();

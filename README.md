@@ -20,6 +20,7 @@ This project analyzes queen puzzle grid images to generate structured JSON data 
   - Detailed logging of processing steps
   - Clean separation between source and output
   - Custom image folder support via command line
+  - Comprehensive build statistics and reporting
 
 ---
 
@@ -51,6 +52,42 @@ This will:
   - Log processing details and solutions
 - Generate `assets/puzzles.json` with the processed data
 - Generate `assets/version.json` to track puzzle data versions
+
+Example output:
+```
+🧩 Scanning puzzle number: 394
+
+🧮 Number of columns: 8
+📏 Table starts at x = 4 and y = 0
+�� Table width = 392
+🎨 Colors detected: 4 regions
+✅ Puzzle 394 solved!
+
+Puzzle:
+       Q                
+             Q          
+    Q                   
+                   Q    
+          Q             
+                      Q 
+                Q       
+ Q                      
+
+Colors:
+🟦 Region 1: #0000FF
+🟨 Region 2: #FFFF00
+🟩 Region 3: #00FF00
+🟥 Region 4: #FF0000
+
+📊 Build Summary:
+----------------
+📈 Total puzzles processed: 387
+✅ Successfully solved: 387
+❌ Failed to solve: 0
+⏱ Build duration: 33.27s
+
+📦 Version updated to: 337
+```
 
 ---
 
@@ -93,6 +130,7 @@ This will:
   - Table start/end positions and width
   - Puzzle solutions
   - Region detection results
+  - Build statistics and summary
 - Generated JSON includes:
   - Region definitions with colors
   - Grid dimensions
@@ -100,6 +138,7 @@ This will:
   - Color mappings
 - Custom image folders can be specified using the `--folder` flag
 - If no folder is specified, the default `images` folder is used
+- Failed puzzles are automatically moved to a `fails` subfolder with reason codes
 
 ---
 
