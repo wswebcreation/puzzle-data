@@ -34,7 +34,6 @@ function parseArgs() {
 const { imagesDir } = parseArgs();
 const puzzleOutputPath = path.resolve(assetsDir, 'puzzles.json');
 const versionOutputPath = path.resolve(assetsDir, 'version.json');
-const puzzles: Puzzle[] = [];
 const maxVerticalPixelScanHeight = 50;
 const horizontalBlackLineThreshold = 25;
 const verticalRowScanHeight = 25;
@@ -45,15 +44,39 @@ async function build(): Promise<void> {
     total: 0,
     succeeded: 0,
     failed: 0,
+    skipped: 0,
     failedPuzzles: [] as { id: string; reason: string; path: string }[]
   };
 
   ensureAssetsFolder(assetsDir);
 
+  let existingPuzzles: Puzzle[] = [];
+  try {
+    if (fs.existsSync(puzzleOutputPath)) {
+      const existingData = fs.readFileSync(puzzleOutputPath, 'utf-8');
+      existingPuzzles = JSON.parse(existingData);
+      console.log(`📚 Loaded ${existingPuzzles.length} existing puzzles`);
+    }
+  } catch {
+    console.warn('⚠️ Could not load existing puzzles, starting fresh');
+  }
+
+  const existingPuzzleIds = new Set(existingPuzzles.map(p => p.id));
+  const puzzles: Puzzle[] = [...existingPuzzles];
   const puzzleNumbers = readPuzzleImages(imagesDir);
   stats.total = puzzleNumbers.length;
 
   for (const puzzleNumber of puzzleNumbers) {
+    const puzzleId = parseInt(puzzleNumber);
+    
+    if (existingPuzzleIds.has(puzzleId)) {
+      console.log(`⏭️ Skipping puzzle ${puzzleNumber} (already exists)`);
+      stats.skipped++;
+      continue;
+    }
+
+    console.log(`\n🔍 Processing new puzzle: ${puzzleNumber}`);
+    
     const image = await Jimp.read(path.join(imagesDir, `${puzzleNumber}.png`));
     const { width } = image.bitmap;
             
@@ -131,10 +154,11 @@ async function build(): Promise<void> {
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log('\n📊 Build Summary:');
   console.log('----------------');
-  console.log(`\u{1F4C8} Total puzzles processed: ${stats.total}`);
-  console.log(`\u{2705} Successfully solved: ${stats.succeeded}`);
-  console.log(`\u{274C} Failed to solve: ${stats.failed}`);
-  console.log(`\u{23F1} Build duration: ${duration}s`);
+  console.log(`📁 Total images found: ${stats.total}`);
+  console.log(`⏭️ Skipped (already exist): ${stats.skipped}`);
+  console.log(`✅ Successfully solved: ${stats.succeeded}`);
+  console.log(`❌ Failed to solve: ${stats.failed}`);
+  console.log(`⏱️ Build duration: ${duration}s`);
   
   if (stats.failed > 0) {
     console.log('\n\u{26A0} Failed puzzles:');
