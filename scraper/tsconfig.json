@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "node",
+        "module": "ESNext",
+        "target": "es2022",
+        "lib": [
+            "es2022",
+            "dom"
+        ],
+        "skipLibCheck": true,
+        "noEmit": true,
+        "typeRoots": ["./node_modules/@types", "./node_modules/@wdio"],
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "rootDir": ".",
+    },
+    "include": [
+        "scraper.ts",
+        "wdio.conf.ts"
+    ]
+}

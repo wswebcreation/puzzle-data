@@ -8,12 +8,18 @@
     "build": "tsc && node dist/build.js",
     "dev": "tsx watch src/build.ts",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "scraper": "wdio run ./scraper/wdio.conf.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",
     "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.33.0",
+    "@wdio/cli": "^9.21.1",
+    "@wdio/local-runner": "^9.21.0",
+    "@wdio/mocha-framework": "^9.21.0",
+    "@wdio/spec-reporter": "^9.20.0",
+    "@wdio/visual-service": "^9.0.2",
     "eslint": "^9.28.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
