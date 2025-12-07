@@ -1,4 +1,7 @@
-export const config: WebdriverIO.Config = {
+import type { Options } from '@wdio/types';
+import type { Capabilities } from '@wdio/types';
+
+export const config: Options.Testrunner & Capabilities.WithRequestedTestrunnerCapabilities = {
     //
     // ====================
     // Runner Configuration

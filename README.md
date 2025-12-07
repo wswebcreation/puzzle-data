@@ -32,7 +32,17 @@ This project analyzes queen puzzle grid images to generate structured JSON data 
 npm install
 ```
 
-### 2. Build once manually
+### 2. Check scrape data
+
+Check the `./scraper/scraper.ts` file and see which puzzles you want to scrape. Adjust the numers
+
+### 3. Run the scraper
+
+```bas
+npm run scraper
+```
+
+### 4. Build once manually
 
 ```bash
 # Use default images folder
@@ -91,7 +101,7 @@ Colors:
 
 ---
 
-### 3. Start in watch mode (for development)
+### 5. Start in watch mode (for development)
 
 ```bash
 # Use default images folder

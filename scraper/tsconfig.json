@@ -9,7 +9,6 @@
         ],
         "skipLibCheck": true,
         "noEmit": true,
-        "typeRoots": ["./node_modules/@types", "./node_modules/@wdio"],
         "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
