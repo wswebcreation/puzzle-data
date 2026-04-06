@@ -8,17 +8,19 @@ This project analyzes queen puzzle grid images to generate structured JSON data 
 
 ## Features
 
-- **Image Analysis**
+- **Image analysis**
   - Automatic grid detection and dimension calculation
   - Color-based region detection and mapping
   - Solution validation through puzzle solving
-- **Data Generation**
+- **Data generation**
   - Compact JSON output for the queens app
   - Version tracking with `version.json`
-- **Development Tools**
+- **Download helper**
+  - Fetch answer images for a numeric range (see [Download puzzle images](#download-puzzle-images))
+- **Development tools**
   - Watch mode for automatic rebuilding
   - Detailed logging of processing steps
-  - Custom image folder support via command line
+  - Custom image folder and optional puzzle ID filter via command line
   - Comprehensive build statistics and reporting
 
 ---
@@ -31,36 +33,60 @@ This project analyzes queen puzzle grid images to generate structured JSON data 
 npm install
 ```
 
-### 2. Add puzzle images
+### 2. (Optional) Download puzzle images
 
-Place puzzle grid screenshots in the `images/` folder (or a custom folder of your choice). Each image should be named with the puzzle number, e.g. `001.png`, `002.png`, etc.
-
-### 3. Build once manually
+If you want images pulled automatically instead of adding them by hand, use the download script. It requests `queens-answer-<n>.jpg` from known CDN paths and saves them as zero-padded filenames (`615.jpg`, `616.jpg`, …) in `images/` by default.
 
 ```bash
-# Use default images folder
+npm run download -- --from=615 --to=705
+```
+
+Optional output folder (relative to the current working directory or absolute):
+
+```bash
+npm run download -- --from=615 --to=705 --output=custom/path/to/images
+```
+
+Existing files in the output folder are skipped. If a puzzle is not found on any configured path, that number is reported as failed. Upload path prefixes live in `src/download.ts` (`UPLOAD_PATHS`); add new year/month segments there when the host changes URLs.
+
+### 3. Add puzzle images manually (alternative)
+
+Place puzzle grid screenshots in the `images/` folder (or another folder you pass to the build). Supported extensions: `.png`, `.jpg`, `.jpeg`. Name each file with the puzzle number, zero-padded to three digits, for example `001.png`, `042.jpg`, `615.jpeg`.
+
+### 4. Build once
+
+```bash
+# Default folder: project `images/`
 npm run build
 
-# Or specify a custom folder
+# Explicit folder (flag)
 npm run build -- --folder=custom/path/to/images
+
+# Explicit folder (positional, same effect)
+npm run build -- custom/path/to/images
+
+# Only specific puzzles (comma-separated; padding is optional)
+npm run build -- --puzzles=615,616,642
 ```
 
-This will:
-- Scan the specified images folder (or default `images` folder) for puzzle grids
-- Process each image to detect grid dimensions, map color regions, and solve the puzzle
-- Generate `assets/puzzles.json` with the processed data
-- Generate `assets/version.json` to track puzzle data versions
-- Copy failed puzzles to a `fails` subfolder with reason codes
+The build will:
+- Scan the images folder for numbered puzzle files
+- Skip puzzles that are already present in `assets/puzzles.json` (incremental runs)
+- For each new image: detect the grid, map regions, solve, and append to the dataset
+- Write `assets/puzzles.json` and bump `assets/version.json`
+- Copy failed images to `<imagesDir>/fails/` with a suffix like `-failed-incomplete` or `-failed-no-solution`
 
-### 4. Start in watch mode (for development)
+### 5. Watch mode (development)
 
 ```bash
-# Use default images folder
 npm run dev
 
-# Or specify a custom folder
 npm run dev -- --folder=custom/path/to/images
+
+npm run dev -- --puzzles=615,616
 ```
+
+Rebuilds when source files change (tsx watch on `src/build.ts`).
 
 ---
 
@@ -70,17 +96,22 @@ npm run dev -- --folder=custom/path/to/images
 |:--------|:------------|
 | `npm run build` | Process all images and generate puzzles.json and version.json |
 | `npm run build -- --folder=path` | Process images from a custom folder |
-| `npm run dev` | Start watch mode to process images and rebuild on changes |
-| `npm run dev -- --folder=path` | Start watch mode with a custom images folder |
+| `npm run build -- path` | Same as `--folder=path` (positional) |
+| `npm run build -- --puzzles=a,b,c` | Only process the listed puzzle numbers (new entries not already in JSON) |
+| `npm run dev` | Watch mode: run the build script on changes |
+| `npm run download -- --from=N --to=M` | Download answer images for puzzle numbers N through M |
+| `npm run download -- --from=N --to=M --output=dir` | Download into a specific folder |
+| `npm run lint` | Run ESLint on TypeScript sources |
+| `npm run lint:fix` | Run ESLint with `--fix` |
 
 ---
 
 ## Notes
 
-- The project uses Jimp for image processing and analysis
-- Already-processed puzzles are skipped on subsequent runs
-- Failed puzzles are automatically moved to a `fails` subfolder with reason codes
-- Generated JSON includes region definitions, grid dimensions, queen placements, and color mappings
+- Processing uses [Jimp](https://github.com/jimp-dev/jimp) for image analysis.
+- Puzzles already in `assets/puzzles.json` are skipped on later builds unless you remove them from the file first.
+- Failed puzzles are copied under `fails/` next to your image folder with reason codes in the filename.
+- Generated JSON includes region definitions, grid dimensions, queen placements, and color mappings.
 
 ---
 
