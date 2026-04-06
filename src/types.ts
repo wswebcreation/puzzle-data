@@ -35,8 +35,6 @@ export interface ContrastLineParams {
 export interface ScanVerticalLinesParams {
   image: JimpImage;
   width: number;
-  maxScanHeight: number;
-  rowScanHeight: number;
   lineThreshold: number;
   puzzleNumber: string;
 }
@@ -52,7 +50,7 @@ export interface GetCellColorParams {
 export interface ParseCellsParams {
   image: JimpImage;
   tableStartX: number;
-  tableStartY: number;
+  tableStartY: number | null;
   tableWidth: number;
   numCols: number;
 }

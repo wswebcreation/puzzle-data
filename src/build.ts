@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Jimp } from 'jimp';
-import { drawPuzzleToTerminal, ensureAssetsFolder, getCurrentVersion, parseCells, parsePuzzle, readPuzzleImages, scanVerticalLines, solvePuzzle } from './utils.js';
+import { drawPuzzleToTerminal, ensureAssetsFolder, getCurrentVersion, getPuzzleImagePath, parseCells, parsePuzzle, readPuzzleImages, scanVerticalLines, solvePuzzle } from './utils.js';
 import { Puzzle } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,29 +14,31 @@ function parseArgs() {
   // Skip the first two arguments (node and script path) and any '--' argument
   const args = process.argv.slice(2).filter(arg => arg !== '--');
   let imagesDir = path.resolve(__dirname, '../images'); // default value
-
-  console.log('Arguments received:', args);
+  let puzzleFilter: string[] | null = null;
 
   for (const arg of args) {
     if (arg.startsWith('--folder=')) {
       imagesDir = path.resolve(process.cwd(), arg.split('=')[1]);
+    } else if (arg.startsWith('--puzzles=')) {
+      puzzleFilter = arg.split('=')[1].split(',').map(n => n.trim().padStart(3, '0'));
     } else if (!arg.startsWith('--')) {
-      // If it's not a named argument and we haven't set the folder yet, use it as positional
       imagesDir = path.resolve(process.cwd(), arg);
     }
   }
 
-  console.log(`\n\u{1F9E9} Using images from: ${imagesDir}\n`);
+  console.log(`\n\u{1F9E9} Using images from: ${imagesDir}`);
+  if (puzzleFilter) {
+    console.log(`\u{1F522} Processing only: ${puzzleFilter.join(', ')}`);
+  }
+  console.log();
 
-  return { imagesDir };
+  return { imagesDir, puzzleFilter };
 }
 
-const { imagesDir } = parseArgs();
+const { imagesDir, puzzleFilter } = parseArgs();
 const puzzleOutputPath = path.resolve(assetsDir, 'puzzles.json');
 const versionOutputPath = path.resolve(assetsDir, 'version.json');
-const maxVerticalPixelScanHeight = 50;
 const horizontalBlackLineThreshold = 25;
-const verticalRowScanHeight = 25;
 
 async function build(): Promise<void> {
   const startTime = Date.now();
@@ -63,7 +65,10 @@ async function build(): Promise<void> {
 
   const existingPuzzleIds = new Set(existingPuzzles.map(p => p.id));
   const puzzles: Puzzle[] = [...existingPuzzles];
-  const puzzleNumbers = readPuzzleImages(imagesDir);
+  const allPuzzleNumbers = readPuzzleImages(imagesDir);
+  const puzzleNumbers = puzzleFilter
+    ? allPuzzleNumbers.filter(n => puzzleFilter.includes(n))
+    : allPuzzleNumbers;
   stats.total = puzzleNumbers.length;
 
   for (const puzzleNumber of puzzleNumbers) {
@@ -77,16 +82,14 @@ async function build(): Promise<void> {
 
     console.log(`\n🔍 Processing new puzzle: ${puzzleNumber}`);
     
-    const image = await Jimp.read(path.join(imagesDir, `${puzzleNumber}.png`));
+    const image = await Jimp.read(getPuzzleImagePath(imagesDir, puzzleNumber));
     const { width } = image.bitmap;
             
     // Step 1: Scan for vertical lines, these are the start x positions of the columns. Also returns the y position of the table
     const { blackXPositions, tableStartY } = scanVerticalLines({
       image,
       lineThreshold: horizontalBlackLineThreshold,
-      maxScanHeight: maxVerticalPixelScanHeight,
       puzzleNumber,
-      rowScanHeight: verticalRowScanHeight,
       width,
     });
 
@@ -118,13 +121,16 @@ async function build(): Promise<void> {
     const incomplete = puzzle.regions.length !== puzzle.size;
     if (!queens || incomplete) {
         const reason = incomplete ? 'incomplete' : 'no-solution';
-        const failPath = path.join(imagesDir, 'fails', `${puzzleNumber}-failed-${reason}.png`);
+        const srcPath = getPuzzleImagePath(imagesDir, puzzleNumber);
+        const ext = path.extname(srcPath);
+        const failsDir = path.join(imagesDir, 'fails');
+        if (!fs.existsSync(failsDir)) {
+            fs.mkdirSync(failsDir, { recursive: true });
+        }
+        const failPath = path.join(failsDir, `${puzzleNumber}-failed-${reason}${ext}`);
         console.warn(`❌ No solution found for puzzle ${puzzle.id}`);
         // copy the image to a folder called fails
-        await fs.copyFileSync(
-            path.join(imagesDir, `${puzzleNumber}.png`),
-            failPath
-        );
+        fs.copyFileSync(srcPath, failPath);
         stats.failed++;
         stats.failedPuzzles.push({
           id: puzzle.id.toString(),
